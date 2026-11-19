@@ -77,7 +77,7 @@ footer{margin-top:20px;font-size:.75rem;color:var(--muted);text-align:center}
 <label class="fld"><span>אופציות שטרם מומשו</span><input type="number" id="inOptions" min="0" step="any" value="10000" inputmode="numeric"></label>
 <label class="fld"><span>מחיר מימוש ממוצע לאופציה ($)</span><input type="number" id="inStrike" min="0" step="any" value="0.01" inputmode="decimal"></label>
 </div>
-<p class="hint">אופציות מניחות מימוש רק אם הן "בכסף" (מחיר למניה גבוה ממחיר המימוש), בניכוי עלות המימוש. על מניות שהונפקו מקבלים את מחיר המניה הרגילה במלואו.</p>
+<p class="hint">אופציות מניחות מימוש רק אם הן "בכסף" (מחיר למניה גבוה ממחיר המימוש), בניכוי עלות המימוש. על מניות שהונפקו מקבלים את מחיר המניה הרגילה במלואו. המחיר למניה מחושב מטבלת השכבות כפי שהיא — הסימולטור לא מוסיף את היחידות שלכם למניין (ההנחה: הן כבר נכללות בטבלה).</p>
 </section>
 <section>
 <h2><span class="num">2</span>תרחיש המכירה</h2>
@@ -112,7 +112,7 @@ footer{margin-top:20px;font-size:.75rem;color:var(--muted);text-align:center}
 <section>
 <details>
 <summary>טבלת השכבות (ברירת מחדל: נתונים פומביים היסטוריים, לעריכה)</summary>
-<p class="hint" style="margin-top:8px">מספרי מניות: נסח חברה היסטורי פומבי (מרץ 2025) — לא טבלת ההון הנוכחית המלאה. סכומי השקעה: אומדנים מדיווחים פומביים. שנו כרצונכם — החישוב מתעדכן מיד.</p>
+<p class="hint" style="margin-top:8px">מספרי מניות: נסח חברה היסטורי פומבי (מרץ 2025) — לא טבלת ההון הנוכחית המלאה. סכומי ההשקעה: ברירת מחדל להמחשה בלבד, בהשראת דיווחים פומביים — לא התנאים בפועל של אף חברה. הכל לעריכה, והחישוב מתעדכן מיד.</p>
 <table class="ct">
 <thead><tr><th>שכבה</th><th class="l">מניות</th><th class="l">הושקע (M$)</th></tr></thead>
 <tbody id="ctBody"></tbody>
@@ -196,7 +196,8 @@ function scNonParticipating(P,mult,pari){
  }
  if(!eqs.length)return null;
  eqs.sort((a,b)=>b.pay._ps-a.pay._ps);
- return eqs[0];
+ const best=eqs[0];best.count=eqs.length;
+ return best;
 }
 
 // formatting
@@ -231,7 +232,7 @@ function render(){
   const takers=classes.filter(c=>!np.conv.has(c.name)).map(c=>c.name);
   const takersTxt=takers.length?takers.join(', '):'אף שכבה (כולם ממירים)';
   sc.push({key:'np',title:'העדפה לא־משתתפת — כל סבב בוחר את המשתלם',tag:'המבנה הנפוץ',ps:np.pay._ps*1e6,
-   note:'כל סבב משווה: ×'+state.mult+' על ההשקעה או המרה למניות רגילות, לפי הגבוה. כאן לוקחים העדפה: '+takersTxt+'.'});
+   note:'כל סבב משווה: ×'+state.mult+' על ההשקעה או המרה למניות רגילות, לפי הגבוה. כאן לוקחים העדפה: '+takersTxt+'.'+(np.count>1?' נמצאו '+np.count+' שיווי־משקל יציבים; מוצג המיטבי למניות הרגילות.':'')});
  }else{
   sc.push({key:'np',title:'העדפה לא־משתתפת',tag:'המבנה הנפוץ',ps:scAllConverted(P),
    note:'לא נמצא שיווי משקל יציב לצירוף זה — מוצגת חלוקה שווה כקירוב.'});
@@ -366,4 +367,4 @@ renderCt();
 render();
 </script>
 </body>
-  </html>
+</html>
