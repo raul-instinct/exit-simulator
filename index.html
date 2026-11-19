@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סימולטור אקזיט — העדפות פירוק</title>
+<style>
+:root{--bg:#f7f5f1;--card:#fff;--ink:#1f2933;--muted:#6b7280;--line:#e5e1da;--accent:#0d7a6f;--accent-soft:#e0f2ef;--c-equal:#94a3b8;--c-np:#0d7a6f;--c-part:#b45309;--c-forced:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans Hebrew",sans-serif;line-height:1.55;padding-bottom:60px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header{padding:28px 0 8px}
+h1{font-size:1.55rem;font-weight:700}
+.sub{color:var(--muted);font-size:.95rem;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:.75rem;background:#efece6;color:#57534a;border-radius:999px;padding:3px 10px}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+h2{font-size:1.05rem;font-weight:700;margin-bottom:12px}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:.8rem;margin-left:6px}
+.grid{display:grid;gap:12px}
+@media(min-width:560px){.grid.cols3{grid-template-columns:1fr 1fr 1fr}.grid.cols2{grid-template-columns:1fr 1fr}}
+label.fld{display:block}
+label.fld span{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+input[type=number]{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:1rem;font-family:inherit;direction:ltr;text-align:left;background:#fbfbfa;color:var(--ink)}
+input[type=number]:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;padding:8px 10px;border:1px solid var(--line);background:#fbfbfa;border-radius:10px;font-size:.9rem;font-family:inherit;color:var(--ink);cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.hint{font-size:.78rem;color:var(--muted);margin-top:6px}
+input[type=range]{width:100%;accent-color:var(--accent);margin-top:10px}
+.exitval{display:flex;align-items:baseline;gap:8px;direction:ltr;justify-content:flex-end}
+.exitval b{font-size:1.3rem}
+.cards{display:grid;gap:12px}
+.scard{border:1px solid var(--line);border-radius:12px;padding:14px;border-right:4px solid var(--muted)}
+.scard.equal{border-right-color:var(--c-equal)}.scard.np{border-right-color:var(--c-np)}
+.scard.part{border-right-color:var(--c-part)}.scard.forced{border-right-color:var(--c-forced)}
+.scard h3{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-size:.68rem;font-weight:600;border-radius:999px;padding:2px 8px;background:#f3f4f6;color:#6b7280}
+.tag.warn{background:#fde8e8;color:#b91c1c}
+.scard .big{font-size:1.45rem;font-weight:700;margin-top:6px;direction:ltr;text-align:right}
+.scard .big small{font-size:.8rem;font-weight:400;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:.85rem;margin-top:8px}
+.kv dt{color:var(--muted)}.kv dd{direction:ltr;text-align:left;font-variant-numeric:tabular-nums}
+.scard p.note{font-size:.78rem;color:var(--muted);margin-top:8px}
+details{margin-top:4px}
+summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600;padding:6px 0}
+table.ct{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:8px}
+table.ct th{font-size:.75rem;color:var(--muted);font-weight:600;text-align:right;padding:4px 6px}
+table.ct th.l,table.ct td.l{text-align:left}
+table.ct td{padding:4px 6px;border-top:1px solid var(--line)}
+table.ct input{padding:5px 8px;font-size:.85rem}
+table.ct tr.total td{font-weight:700;font-variant-numeric:tabular-nums}
+.btnreset{margin-top:10px;font-size:.8rem;background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--muted);font-family:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.78rem;margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+ul.caveats{margin:4px 18px 0 0;font-size:.85rem;color:#4b5563}
+ul.caveats li{margin-bottom:6px}
+footer{margin-top:20px;font-size:.75rem;color:var(--muted);text-align:center}
+.zero{color:#b91c1c}
+#tooltip{position:fixed;pointer-events:none;background:#111827;color:#fff;font-size:.75rem;border-radius:8px;padding:8px 10px;display:none;z-index:10;direction:rtl;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:250px}
+#tooltip .row{display:flex;justify-content:space-between;gap:10px}
+#tooltip .v{direction:ltr}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>סימולטור אקזיט: כמה שוות המניות שלי?</h1>
+<p class="sub">מזינים כמה מניות ואופציות יש לכם, בוחרים תרחיש מכירה ומבנה העדפות, ורואים מה נשאר למניות הרגילות. כלי להבנת המתמטיקה של העדפות פירוק — לא תחזית ולא ייעוץ.</p>
+<div class="chips"><span class="chip">הנחות מסומנות במפורש</span><span class="chip">נתוני ברירת מחדל פומביים והיסטוריים</span><span class="chip">הכל לפני מס</span></div>
+</header>
+<section>
+<h2><span class="num">1</span>מה יש לכם</h2>
+<div class="grid cols3">
+<label class="fld"><span>מניות בבעלותכם (שהונפקו)</span><input type="number" id="inShares" min="0" step="any" value="0" inputmode="numeric"></label>
+<label class="fld"><span>אופציות שטרם מומשו</span><input type="number" id="inOptions" min="0" step="any" value="10000" inputmode="numeric"></label>
+<label class="fld"><span>מחיר מימוש ממוצע לאופציה ($)</span><input type="number" id="inStrike" min="0" step="any" value="0.01" inputmode="decimal"></label>
+</div>
+<p class="hint">אופציות מניחות מימוש רק אם הן "בכסף" (מחיר למניה גבוה ממחיר המימוש), בניכוי עלות המימוש. על מניות שהונפקו מקבלים את מחיר המניה הרגילה במלואו.</p>
+</section>
+<section>
+<h2><span class="num">2</span>תרחיש המכירה</h2>
+<label class="fld"><span>תמורה כוללת לבעלי המניות (מיליון $)</span><input type="number" id="inExit" min="0" step="any" value="2500" inputmode="numeric"></label>
+<input type="range" id="exitRange" min="0" max="8000" step="50" value="2500">
+<div class="exitval"><b id="exitLabel">$2.50B</b></div>
+<p class="hint">התמורה שמחולקת לבעלי המניות אחרי חוב ועלויות עסקה — לא שווי העסקה בכותרות.</p>
+</section>
+<section>
+<h2><span class="num">3</span>מבנה ההעדפות (הנחות, לא עובדות)</h2>
+<div class="grid cols2">
+<div>
+<span style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:4px">מכפיל העדפה</span>
+<div class="seg" id="multSeg"><button data-m="1" class="on">×1</button><button data-m="1.5">×1.5</button><button data-m="2">×2</button><button data-m="3">×3</button></div>
+</div>
+<div>
+<span style="font-size:.85rem;color:var(--muted);display:block;margin-bottom:4px">סדר קדימות בין הסבבים</span>
+<div class="seg" id="senSeg"><button data-s="std" class="on">הסבב המאוחר קודם</button><button data-s="pari">שווים (Pari passu)</button></div>
+</div>
+</div>
+<p class="hint">אף אחד מבחוץ לא יודע מה התנאים האמיתיים — הם כתובים בתקנון החברה ובהסכמי המשקיעים. המכפיל והסדר כאן הם "מה אם", לא מידע.</p>
+</section>
+<section>
+<h2><span class="num">4</span>תוצאות לפי תרחיש</h2>
+<div class="cards" id="cards"></div>
+</section>
+<section>
+<h2><span class="num">5</span>הגרף: השווי שלכם לפי גודל האקזיט</h2>
+<svg id="chart" width="100%" viewBox="0 0 700 340" role="img" aria-label="גרף שווי לפי תמורה"></svg>
+<div class="legend" id="legend"></div>
+</section>
+<section>
+<details>
+<summary>טבלת השכבות (ברירת מחדל: נתונים פומביים היסטוריים, לעריכה)</summary>
+<p class="hint" style="margin-top:8px">מספרי מניות: נסח חברה היסטורי פומבי (מרץ 2025) — לא טבלת ההון הנוכחית המלאה. סכומי השקעה: אומדנים מדיווחים פומביים. שנו כרצונכם — החישוב מתעדכן מיד.</p>
+<table class="ct">
+<thead><tr><th>שכבה</th><th class="l">מניות</th><th class="l">הושקע (M$)</th></tr></thead>
+<tbody id="ctBody"></tbody>
+<tfoot><tr class="total"><td>סה״כ</td><td class="l" id="ctTotalShares"></td><td class="l" id="ctTotalInv"></td></tr>
+<tr class="total"><td>מניות רגילות</td><td class="l" colspan="2"><input type="number" id="inCommon" min="0" step="any" style="max-width:170px"></td></tr></tfoot>
+</table>
+<button class="btnreset" id="btnReset">איפוס לברירת מחדל</button>
+</details>
+</section>
+<section>
+<h2>מה הסימולטור לא יודע</h2>
+<ul class="caveats">
+<li><b>התנאים האמיתיים.</b> מכפיל, השתתפות וסדר קדימות נקבעים בתקנון ובהסכמי המשקיעים — מסמכים שאינם פומביים. כל בחירה כאן היא הנחה.</li>
+<li><b>טבלת הון עדכנית.</b> מספרי המניות היסטוריים (מרץ 2025). דילול, מניות ואופציות חדשות משנים את התוצאה.</li>
+<li><b>הגשר מהכותרת לכיס.</b> חוב, עמלות, escrow ו-earn-out מקטינים את הסכום שמחולק בפועל.</li>
+<li><b>מס.</b> כל התוצאות ברוטו. המס בפועל תלוי במסלול (למשל סעיף 102 דרך נאמן) — שאלה לרואה חשבון.</li>
+<li><b>אופציות של אחרים.</b> החישוב לא מוסיף לטבלה אופציות שיומשו על ידי עובדים אחרים ולא משנה את הדילול.</li>
+<li><b>זה לא תרחיש סבירות.</b> אף כרטיס כאן אינו "מה שיקרה" — אין בסיס פומבי לדרג תרחישים.</li>
+</ul>
+</section>
+<footer>נבנה ככלי לימודי. מבני ההעדפות מבוססים על הסברים פומביים של a16z, CRV ו-Bird &amp; Bird.</footer>
+</div>
+<div id="tooltip"></div>
+<script>
+'use strict';
+const DEFAULT_CLASSES=[
+ {name:'E',shares:24672900,invested:550},
+ {name:'D',shares:41986700,invested:310},
+ {name:'C',shares:76166200,invested:133},
+ {name:'B1',shares:693200,invested:0},
+ {name:'B',shares:80969400,invested:30},
+ {name:'A',shares:73192700,invested:16},
+ {name:'Seed',shares:17421300,invested:4}
+];
+const DEFAULT_COMMON=107698812;
+let classes=DEFAULT_CLASSES.map(c=>({...c}));
+let commonShares=DEFAULT_COMMON;
+const state={shares:0,options:10000,strike:0.01,exit:2500,mult:1,pari:false};
+
+// model: money in $M, shares absolute, per-share out in $
+function payPrefs(P,cls,mult,pari){
+ const paid={};cls.forEach(c=>paid[c.name]=0);let rem=P;
+ if(pari){
+  const tot=cls.reduce((s,c)=>s+c.invested*mult,0);
+  if(tot<=rem){cls.forEach(c=>paid[c.name]=c.invested*mult);rem-=tot;}
+  else{cls.forEach(c=>paid[c.name]=tot>0?rem*(c.invested*mult)/tot:0);rem=0;}
+ }else{
+  for(const c of cls){const take=Math.min(c.invested*mult,rem);paid[c.name]=take;rem-=take;}
+ }
+ return [paid,rem];
+}
+function scAllConverted(P){const t=commonShares+classes.reduce((s,c)=>s+c.shares,0);return t>0?P*1e6/t:0;}
+function scForced(P,mult,pari){const [,rem]=payPrefs(P,classes,mult,pari);return commonShares>0?rem*1e6/commonShares:0;}
+function scParticipating(P,mult,pari){
+ const [,rem]=payPrefs(P,classes,mult,pari);
+ const t=commonShares+classes.reduce((s,c)=>s+c.shares,0);
+ return t>0?rem*1e6/t:0;
+}
+function payoffGiven(P,mult,pari,converting){
+ const nonconv=classes.filter(c=>!converting.has(c.name));
+ const [paid,rem]=payPrefs(P,nonconv,mult,pari);
+ const convSh=classes.filter(c=>converting.has(c.name)).reduce((s,c)=>s+c.shares,0);
+ const denom=commonShares+convSh;
+ const ps=denom>0?rem/denom:0;
+ const out={};
+ for(const c of classes)out[c.name]=converting.has(c.name)?ps*c.shares:(paid[c.name]||0);
+ out._ps=ps;return out;
+}
+function scNonParticipating(P,mult,pari){
+ const n=classes.length,eqs=[];
+ for(let mask=0;mask<(1<<n);mask++){
+  const conv=new Set();classes.forEach((c,i)=>{if(mask>>i&1)conv.add(c.name);});
+  const pay=payoffGiven(P,mult,pari,conv);
+  let stable=true;
+  for(const c of classes){
+   const c2=new Set(conv);
+   if(c2.has(c.name))c2.delete(c.name);else c2.add(c.name);
+   if(payoffGiven(P,mult,pari,c2)[c.name]>pay[c.name]+1e-9){stable=false;break;}
+  }
+  if(stable)eqs.push({conv,pay});
+ }
+ if(!eqs.length)return null;
+ eqs.sort((a,b)=>b.pay._ps-a.pay._ps);
+ return eqs[0];
+}
+
+// formatting
+const fmtInt=new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
+const fmt2=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const price$=ps=>'$'+fmt2.format(ps);
+function fmtUser(v){
+ if(v>=1e9)return '$'+fmt2.format(v/1e9)+'B';
+ if(v>=1e6)return '$'+fmt2.format(v/1e6)+'M';
+ return '$'+fmtInt.format(v);
+}
+function userTake(ps){
+ const sharesVal=state.shares*ps;
+ const optVal=Math.max(0,ps-state.strike)*state.options;
+ return {sharesVal,optVal,total:sharesVal+optVal};
+}
+const COLORS={equal:'#94a3b8',np:'#0d7a6f',part:'#b45309',forced:'#dc2626'};
+function psFor(key,P){
+ if(key==='equal')return scAllConverted(P);
+ if(key==='part')return scParticipating(P,state.mult,state.pari);
+ if(key==='forced')return scForced(P,state.mult,state.pari);
+ const np=scNonParticipating(P,state.mult,state.pari);
+ return np?np.pay._ps*1e6:scAllConverted(P);
+}
+// ---------- render cards ----------
+function render(){
+ const P=state.exit,sc=[];
+ sc.push({key:'equal',title:'חלוקה שווה — הכל מומר 1:1',tag:'בסיס להשוואה',ps:scAllConverted(P),
+  note:'כל מניה, רגילה או בכורה, מקבלת אותו דבר. זה גם מה שקורה בפועל כשהאקזיט גבוה מספיק שכדאי לכולם להמיר.'});
+ const np=scNonParticipating(P,state.mult,state.pari);
+ if(np){
+  const takers=classes.filter(c=>!np.conv.has(c.name)).map(c=>c.name);
+  const takersTxt=takers.length?takers.join(', '):'אף שכבה (כולם ממירים)';
+  sc.push({key:'np',title:'העדפה לא־משתתפת — כל סבב בוחר את המשתלם',tag:'המבנה הנפוץ',ps:np.pay._ps*1e6,
+   note:'כל סבב משווה: ×'+state.mult+' על ההשקעה או המרה למניות רגילות, לפי הגבוה. כאן לוקחים העדפה: '+takersTxt+'.'});
+ }else{
+  sc.push({key:'np',title:'העדפה לא־משתתפת',tag:'המבנה הנפוץ',ps:scAllConverted(P),
+   note:'לא נמצא שיווי משקל יציב לצירוף זה — מוצגת חלוקה שווה כקירוב.'});
+ }
+ sc.push({key:'part',title:'העדפה משתתפת — "צלילה כפולה"',tag:'נדיר, אגרסיבי',ps:scParticipating(P,state.mult,state.pari),
+  note:'המשקיעים גובים קודם ×'+state.mult+' על ההשקעה, ואז משתתפים שוב ביתרה לפי אחוז המניות. המניות הרגילות נפגעות פעמיים.'});
+ sc.push({key:'forced',title:'כולם לוקחים העדפה — בכוח',tag:'אילוסטרציה',tagWarn:true,ps:scForced(P,state.mult,state.pari),
+  note:'תרגיל תאורטי: כל הסבבים גובים ×'+state.mult+' ויוצאים. בדרך כלל לא רציונלי — סבב שהמרה משתלמת לו יותר ימיר במציאות.'});
+ const el=document.getElementById('cards');el.innerHTML='';
+ for(const s of sc){
+  const t=userTake(s.ps);
+  const d=document.createElement('div');
+  d.className='scard '+s.key;
+  d.innerHTML='<h3>'+s.title+' <span class="tag'+(s.tagWarn?' warn':'')+'">'+s.tag+'</span></h3>'
+   +'<div class="big'+(t.total<=0?' zero':'')+'">'+fmtUser(t.total)+' <small>ברוטו, לפני מס</small></div>'
+   +'<dl class="kv"><dt>מחיר למניה רגילה</dt><dd>'+price$(s.ps)+'</dd>'
+   +'<dt>מניות ('+fmtInt.format(state.shares)+')</dt><dd>'+fmtUser(t.sharesVal)+'</dd>'
+   +'<dt>אופציות ('+fmtInt.format(state.options)+', נטו אחרי מימוש)</dt><dd>'+fmtUser(t.optVal)+'</dd></dl>'
+   +'<p class="note">'+s.note+'</p>';
+  el.appendChild(d);
+ }
+ renderChart(sc.map(s=>({key:s.key,color:COLORS[s.key],label:s.title.split('—')[0].trim()})));
+ renderCtTotals();
+ document.getElementById('exitLabel').textContent=moneyM(state.exit);
+}
+function moneyM(v){return v>=1000?'$'+fmt2.format(v/1000)+'B':'$'+fmtInt.format(v)+'M';}
+
+// ---------- chart ----------
+function renderChart(lines){
+ const svg=document.getElementById('chart');
+ const W=700,H=340,ml=58,mr=14,mt=14,mb=34,iw=W-ml-mr,ih=H-mt-mb,maxX=8000;
+ // y max from user total at maxX across lines
+ let maxY=0;
+ const sample=(key,P)=>userTake(psFor(key,P)).total;
+ for(const l of lines){for(let P=0;P<=maxX;P+=250){maxY=Math.max(maxY,sample(l.key,P));}}
+ if(maxY<=0)maxY=1;
+ const X=P=>ml+iw*P/maxX, Y=v=>mt+ih-ih*v/maxY;
+ let html='';
+ // grid
+ for(let P=0;P<=maxX;P+=1000){
+  html+='<line x1="'+X(P)+'" y1="'+mt+'" x2="'+X(P)+'" y2="'+(mt+ih)+'" stroke="#eee9e2"/>'
+   +'<text x="'+X(P)+'" y="'+(H-12)+'" font-size="10" fill="#9ca3af" text-anchor="middle">'+(P/1000)+'B</text>';
+ }
+ for(let i=0;i<=4;i++){
+  const v=maxY*i/4;
+  html+='<line x1="'+ml+'" y1="'+Y(v)+'" x2="'+(W-mr)+'" y2="'+Y(v)+'" stroke="#eee9e2"/>'
+   +'<text x="'+(ml-6)+'" y="'+(Y(v)+3)+'" font-size="10" fill="#9ca3af" text-anchor="end">'+short$(v)+'</text>';
+ }
+ for(const l of lines){
+  let d='';
+  for(let P=0;P<=maxX;P+=50){d+=(P===0?'M':'L')+X(P).toFixed(1)+','+Y(sample(l.key,P)).toFixed(1)+' ';}
+  html+='<path d="'+d+'" fill="none" stroke="'+l.color+'" stroke-width="2"/>';
+ }
+ // current-exit marker
+ html+='<line x1="'+X(state.exit)+'" y1="'+mt+'" x2="'+X(state.exit)+'" y2="'+(mt+ih)+'" stroke="#374151" stroke-dasharray="4 3"/>';
+ svg.innerHTML=html;
+ svg._geom={ml,mr,mt,mb,iw,ih,maxX,maxY,lines};
+ const leg=document.getElementById('legend');leg.innerHTML='';
+ for(const l of lines){const s=document.createElement('span');s.innerHTML='<i style="background:'+l.color+'"></i>'+l.label;leg.appendChild(s);}
+}
+function short$(v){
+ if(v>=1e9)return '$'+fmt2.format(v/1e9)+'B';
+ if(v>=1e6)return '$'+fmtInt.format(v/1e6)+'M';
+ if(v>=1e3)return '$'+fmtInt.format(v/1e3)+'K';
+ return '$'+fmtInt.format(v);
+}
+// ---------- cap table editor ----------
+function renderCt(){
+ const tb=document.getElementById('ctBody');tb.innerHTML='';
+ classes.forEach((c,i)=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+c.name+'</td>'
+   +'<td class="l"><input type="number" min="0" step="any" value="'+c.shares+'" data-i="'+i+'" data-k="shares"></td>'
+   +'<td class="l"><input type="number" min="0" step="any" value="'+c.invested+'" data-i="'+i+'" data-k="invested"></td>';
+  tb.appendChild(tr);
+ });
+ tb.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{
+  const c=classes[+inp.dataset.i];
+  c[inp.dataset.k]=Math.max(0,parseFloat(inp.value)||0);
+  render();
+ }));
+ const ci=document.getElementById('inCommon');
+ ci.value=commonShares;
+ ci.oninput=()=>{commonShares=Math.max(0,parseFloat(ci.value)||0);render();};
+}
+function renderCtTotals(){
+ document.getElementById('ctTotalShares').textContent=fmtInt.format(commonShares+classes.reduce((s,c)=>s+c.shares,0));
+ document.getElementById('ctTotalInv').textContent=fmtInt.format(classes.reduce((s,c)=>s+c.invested,0));
+}
+document.getElementById('btnReset').addEventListener('click',()=>{
+ classes=DEFAULT_CLASSES.map(c=>({...c}));commonShares=DEFAULT_COMMON;renderCt();render();
+});
+
+// ---------- events ----------
+const num=(id,key)=>{const e=document.getElementById(id);e.addEventListener('input',()=>{state[key]=Math.max(0,parseFloat(e.value)||0);render();});};
+num('inShares','shares');num('inOptions','options');num('inStrike','strike');
+const exitIn=document.getElementById('inExit'),exitRg=document.getElementById('exitRange');
+exitIn.addEventListener('input',()=>{state.exit=Math.max(0,parseFloat(exitIn.value)||0);exitRg.value=Math.min(8000,state.exit);render();});
+exitRg.addEventListener('input',()=>{state.exit=+exitRg.value;exitIn.value=state.exit;render();});
+document.getElementById('multSeg').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ document.querySelectorAll('#multSeg button').forEach(x=>x.classList.toggle('on',x===b));
+ state.mult=parseFloat(b.dataset.m);render();
+});
+document.getElementById('senSeg').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ document.querySelectorAll('#senSeg button').forEach(x=>x.classList.toggle('on',x===b));
+ state.pari=b.dataset.s==='pari';render();
+});
+
+// ---------- chart hover ----------
+const svg=document.getElementById('chart'),tip=document.getElementById('tooltip');
+svg.addEventListener('mousemove',e=>{
+ const g=svg._geom;if(!g)return;
+ const r=svg.getBoundingClientRect();
+ const px=(e.clientX-r.left)*(700/r.width);
+ const P=Math.max(0,Math.min(g.maxX,(px-g.ml)/g.iw*g.maxX));
+ let html='<div class="row"><b>תמורה</b><span class="v">'+moneyM(P)+'</span></div>';
+ for(const l of g.lines){
+  const v=userTake(psFor(l.key,P)).total;
+  html+='<div class="row"><span style="color:'+l.color+'">'+l.label+'</span><span class="v">'+fmtUser(v)+'</span></div>';
+ }
+ tip.innerHTML=html;tip.style.display='block';
+ const tw=tip.offsetWidth;
+ let tx=e.clientX+14;if(tx+tw>window.innerWidth-8)tx=e.clientX-tw-14;
+ tip.style.left=tx+'px';tip.style.top=(e.clientY+14)+'px';
+});
+svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+svg.addEventListener('touchstart',()=>{tip.style.display='none';},{passive:true});
+
+renderCt();
+render();
+</script>
+</body>
+  </html>
